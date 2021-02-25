@@ -15,11 +15,17 @@ root.style.setProperty('--game-size', `${GAME_SIZE}px`)//960px
 //.......
 
 function createBoard(){
-
-    const boardElement = document.getElementById('board')
     
+    const boardElement = document.getElementById('board')
+    const elements = []
+
+    
+
     function createElement(options){
-        const {item, top, left} = options
+        let {item, top, left} = options
+
+        const currentElement = {item, currentPosition:{top, left}}
+        elements.push(currentElement)
 
         const htmlElement = document.createElement('div')
         htmlElement.className = item
@@ -28,13 +34,138 @@ function createBoard(){
 
         boardElement.appendChild(htmlElement)
 
-        console.log('createElement')
+        function getNewDirection(buttonPressed, position) {
+            switch (buttonPressed) {
+                case 'ArrowUp':
+                    return{top: position.top - TILE_SIZE, left: position.left}
+                
+                case 'ArrowRight':
+                    return{top: position.top, left: position.left + TILE_SIZE}    
+                
+                case 'ArrowLeft':
+                
+                    return{top: position.top, left: position.left - TILE_SIZE}
+                
+                case 'ArrowDown':
+                    return{top: position.top + TILE_SIZE, left: position.left}  
+                    
+                default:
+                    return position
+
+            }
+
+
+
+        }
+
+        function validateMoviment(position, conflictItem){
+            return (                
+             
+                position.left >= 48 &&
+                position.left <= 864 &&
+                position.top >= 96 &&
+                position.top <= 816 &&
+                conflictItem?.item !== `forniture`
+
+
+            )
+
+        }
+
+        function getMovimentConflict(position, els){
+            const conflictItem = els.find((currentElement) => {
+                return(
+                    currentElement.currentPosition.top === position.top &&
+                    currentElement.currentPosition.left === position.left
+                )
+            })
+            return conflictItem
+        }
+
+        function validateConflicts(currentEl, conflictItem){
+
+            if(currentEl.item === 'hero'){
+                if(
+                    conflictItem?.item === 'mini-demon' ||
+                    conflictItem?.item === 'trap'
+                ){
+                    console.log('Você morreu!')
+
+                }
+
+                if(conflictItem?.item === 'chest'){
+
+                    console.log('Você ganhou!')
+                }
+
+            }
+
+
+        }
+
+        function move(buttonPressed){
+            
+            const newPosition = getNewDirection(buttonPressed, currentElement.currentPosition)
+            const conflictItem = getMovimentConflict(newPosition, elements)
+            const isValidMoviment = validateMoviment(newPosition, conflictItem)
+            
+            if(isValidMoviment){
+            currentElement.currentPosition = newPosition 
+            htmlElement.style.top=`${newPosition.top}px`
+            htmlElement.style.left=`${newPosition.left}px`
+
+            validateConflicts(currentElement, conflictItem)
+            }
+        }
+
+        return{
+
+            move:move
+        }
 
     }
 
-    function createItem(option)
-    return{
+    function createItem(options){
+        createElement(options)
+
+
+    }
+
+    function createHero(options){
+        const hero = createElement({
+        item:'hero',
+        top: options.top,
+        left: options.left,
+        });
+
+        document.addEventListener('keydown', (event) =>{
+            hero.move(event.key)
+
+        })
+    }
+
+    function createEnemy(options){
+        const enemy = createElement({
+        item:'mini-demon',
+        top: options.top,
+        left: options.left,
+        });
+
+        setInterval(()=>{
+            const direction = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft']
+            const randomIndex = Math.floor(Math.random() * direction.length)
+            const randomDirection = direction[randomIndex]
+
+            enemy.move(randomDirection)
+
+        },1000)
+
         
+    }
+    return{
+        createItem: createItem,
+        createHero: createHero,
+        createEnemy: createEnemy, 
     }
 }
 
@@ -44,8 +175,14 @@ const board = createBoard()
 * top  -> number
 * left -> number
  */
-board.createElement({ item: 'mini-demon', top: TILE_SIZE * 5, left: TILE_SIZE * 5});
-board.createElement({ item: 'trap', top: TILE_SIZE * 10, left: TILE_SIZE * 10});
-board.createElement({ item: 'chest', top: TILE_SIZE * 15, left: TILE_SIZE * 15});
-board.createElement({ item: 'hero', top: TILE_SIZE * 16, left: TILE_SIZE * 2});
+board.createEnemy({ top: TILE_SIZE * 5, left: TILE_SIZE * 5});
+board.createItem({ item: 'trap', top: TILE_SIZE * 10, left: TILE_SIZE * 10});
+
+board.createItem({ item: 'forniture', top: TILE_SIZE * 17, left: TILE_SIZE * 2});
+board.createItem({ item: 'forniture', top: TILE_SIZE * 2, left: TILE_SIZE * 8});
+board.createItem({ item: 'forniture', top: TILE_SIZE * 2, left: TILE_SIZE * 16});
+board.createItem({ item: 'forniture', top: TILE_SIZE * 2, left: TILE_SIZE * 3});
+
+board.createItem({ item: 'chest', top: TILE_SIZE * 15, left: TILE_SIZE * 15});
+board.createHero({ top: TILE_SIZE * 16, left: TILE_SIZE * 2});
 
